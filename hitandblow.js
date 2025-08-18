@@ -6,14 +6,14 @@ const readline = require("readline");
 //ゲームクラスを定義
 class HitAndBlow {
     constructor() {
-        this.rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
         this.tryCount = 0; // 追加: 試行回数をカウントする変数
         this.secretArr = [];
         this.DIGITS = 0;
         this.history = []; // 追加: 回答履歴を保存する配列
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
     }
     // 難易度選択メソッド
     selectDifficulty() {
@@ -78,8 +78,7 @@ class HitAndBlow {
             // 入力値のチェック
             if (
                 input.length !== this.DIGITS ||
-                inputArray.some(isNaN) ||
-                new Set(inputArray).size !== this.DIGITS
+                inputArray.some(isNaN) 
             ) {
                 console.log(`無効な入力です。${this.DIGITS}桁の重複しない数字を入力してください`);
                 this.judgeAnswer();
