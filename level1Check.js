@@ -1,6 +1,5 @@
 //hit and blow game
 
-DIGITS = 4;
 //1. readlineモジュールをインポート
 const readline = require("readline");
 
@@ -11,13 +10,14 @@ class HitAndBlow {
             input: process.stdin,
             output: process.stdout
         });
+        this.DIGITS = 4;
 
         // 1. 0から9までの配列（山札）を用意
         const source = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         const answer = [];
 
         // 2. 山札から4枚のカードをランダムに引く
-        for (let i = 0; i < DIGITS; i++) {
+        for (let i = 0; i < this.DIGITS; i++) {
             // 山札からランダムな位置を選ぶ
             const randIndex = Math.floor(Math.random() * source.length);
             // その位置の数字を1枚抜き取り、山札から削除する
@@ -39,15 +39,16 @@ class HitAndBlow {
 
     //5. ユーザーの入力を受け付けるメソッド
     judgeAnswer() {
-        this.rl.question(`${DIGITS}桁の数字を入力してください: `, (input) => {
+        this.rl.question(`${this.DIGITS}桁の数字を入力してください: `, (input) => {
             const inputArray = input.split('').map(Number);
 
             // 入力値のチェック
             if (
-                input.length !== DIGITS ||
-                inputArray.some(isNaN) 
+                input.length !== this.DIGITS ||
+                inputArray.some(isNaN) ||
+                new Set(inputArray).size !== this.DIGITS
             ) {
-                console.log(`無効な入力です。${DIGITS}桁の重複しない数字を入力してください`);
+                console.log(`無効な入力です。${this.DIGITS}桁の重複しない数字を入力してください`);
                 this.judgeAnswer();
                 return;
             }
@@ -75,7 +76,7 @@ class HitAndBlow {
             console.log("Hit: " + hit + " Blow: " + blow);
 
             //7. hitが4ならゲーム終了
-            if (hit === DIGITS) {
+            if (hit === this.DIGITS) {
                 console.log("おめでとうございます！正解です！");
                 this.rl.close();
             } else {
