@@ -10,6 +10,7 @@ class Echo {
         output: process.stdout
         
         });
+// 4桁の数字をランダムに生成
 const answer = new Set();
 while (answer.size < 4){
     const randomNumber = Math.floor(Math.random() * 10);
