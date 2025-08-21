@@ -4,7 +4,8 @@ const MAP_SYMBOLS = {
     BOX: 'o',
     GOAL: '.',
     WALL: '#',
-    FLOOR: " "
+    FLOOR: " ",
+    BOXONGOAL: "*"
 };
 
 //readlineモジュールをインポート
@@ -29,23 +30,22 @@ class Stage {
         
         // ゴールの場所を(X,Y)座標で把握する
         this.goalPositions = [];
-        this.map.forEach((row, y) => {
-            row.forEach((char, x) => {
-                if(char === MAP_SYMBOLS.GOAL){
-                    this.goalPositions.push({x: x, y: y})
-                }
-            });
-        });
-
+        // 荷物の場所を(X, Y)座標で把握する
+        this.boxes = [];
         // プレイヤーの場所を(X, Y)座標で把握する
         let playerX;
         let playerY;
 
         this.map.forEach((row, y) => {
             row.forEach((char, x) => {
-                if (char === MAP_SYMBOLS.PLAYER) {
+                if(char === MAP_SYMBOLS.GOAL){
+                    this.goalPositions.push({x: x, y: y})
+                } else if (char === MAP_SYMBOLS.PLAYER) {
                     playerX = x;
                     playerY = y;
+                } else if (char === MAP_SYMBOLS.BOX) {
+                    this.boxes.push(new Box(x, y));
+                    this.map[y][x] = MAP_SYMBOLS.FLOOR;
                 }
             });
         });
@@ -53,18 +53,6 @@ class Stage {
         this.player = new Player(playerX, playerY);
         // プレイヤーの位置から"@"を削除"
         this.map[playerY][playerX] = MAP_SYMBOLS.FLOOR;
-
-        // 荷物の場所を(X, Y)座標で把握する
-        this.boxes = [];
-        this.map.forEach((row, y) => {
-            row.forEach((char, x) => {
-                if (char === MAP_SYMBOLS.BOX) {
-                    this.boxes.push(new Box(x, y));
-                    this.map[y][x] = MAP_SYMBOLS.FLOOR;
-
-                };
-            });
-        });
     }
     // Playerを移動させるメソッド
     movePlayer(dx, dy) {
@@ -79,7 +67,7 @@ class Stage {
         const targetBox = this.boxes.find(box => box.x === nextX && box.y === nextY);
         // 荷物があった場合
         // 荷物の一個先が壁か他の荷物だった場合、何もしない
-        if(targetBox) {
+        if (targetBox) {
             const boxNextX = targetBox.x + dx;
             const boxNextY = targetBox.y + dy;
             const isBlocked = this.map[boxNextY][boxNextX] === MAP_SYMBOLS.WALL ||
@@ -93,8 +81,7 @@ class Stage {
             targetBox.y += dy;
 
             this.player.move(dx, dy);
-            // 荷物がない場合
-        } else {
+        } else { // 荷物がない場合
             this.player.move(dx, dy);
         }         
     }
@@ -116,8 +103,14 @@ class Stage {
             }
         });
         // boxes配列の情報を元に、荷物をviewMapに描画する
+        // 荷物の位置とゴールの位置が被ってたら表記を変える
         this.boxes.forEach(box => {
-        viewMap[box.y][box.x] = box.symbol;
+            const isOnGoal = this.goalPositions.some(goal => goal.x === box.x && goal.y === box.y);
+            if (isOnGoal){
+                viewMap[box.y][box.x] = MAP_SYMBOLS.BOXONGOAL;
+            } else {
+                viewMap[box.y][box.x] = box.symbol;
+            }     
         });
 
         // プレイヤーがいる行を文字列から配列に変換
@@ -188,30 +181,20 @@ class Game {
             }
 
             //入力の分岐によって座標を変更
-            if (key.name === "w") {
-                this.stage.movePlayer(0, -1);
-            } else if (key.name === "a") {
-                this.stage.movePlayer(-1, 0);
-            } else if (key.name === "s") {
-                this.stage.movePlayer(0, 1);
-            } else if (key.name === "d") {
-                this.stage.movePlayer(1, 0);
+            switch (key.name) {
+                case "w":
+                    this.stage.movePlayer(0, -1);
+                    break;
+                case "a":
+                    this.stage.movePlayer(-1, 0);
+                    break;
+                case "s":
+                    this.stage.movePlayer(0, 1);
+                    break;
+                case "d":
+                    this.stage.movePlayer(1, 0);
+                    break;
             }
-            // swtich文バージョン
-            // switch (key.name) {
-            //     case "w":
-            //         this.stage.movePlayer(0, -1);
-            //         break;
-            //     case "a":
-            //         this.stage.movePlayer(-1, 0);
-            //         break;
-            //     case "s":
-            //         this.stage.movePlayer(0, 1);
-            //         break;
-            //     case "d":
-            //         this.stage.movePlayer(1, 0);
-            //         break;
-            // }
             // 毎回の入力後に、必ず盤面を再描画する
             this.stage.display();
 
