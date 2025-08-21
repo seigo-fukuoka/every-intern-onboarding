@@ -1,3 +1,12 @@
+// ステージ上のモノを定数として定義する
+const MAP_SYMBOLS = {
+    PLAYER: '@',
+    BOX: 'o',
+    GOAL: '.',
+    WALL: '#',
+    FLOOR: " "
+};
+
 //readlineモジュールをインポート
 const readline = require("readline");
 
@@ -5,6 +14,7 @@ const readline = require("readline");
 // 役割：盤面の状態（壁、荷物、プレイヤーの位置）をすべて把握し、ゲームのルールを実行する責任者
 class Stage {
     constructor() {
+
         // 盤面を定義し、配列として保持しておく
         this.mapData = [
             "#########",
@@ -17,62 +27,77 @@ class Stage {
         ];
         this.map = this.mapData.map(row => row.split("")); // 文字列を配列に変換
         
-        // ゴールの場所を(X,Y)座標で把握する、
+        // ゴールの場所を(X,Y)座標で把握する
         this.goalPositions = [];
         this.map.forEach((row, y) => {
-            let index = -1;
-            while ((index = row.indexOf('.', index + 1)) !== -1) {
-                this.goalPositions.push({ x: index, y: y });
-        }})
-        // プレイヤーの初期位置を設定
+            row.forEach((char, x) => {
+                if(char === MAP_SYMBOLS.GOAL){
+                    this.goalPositions.push({x: x, y: y})
+                }
+            });
+        });
+
+        // プレイヤーの場所を(X, Y)座標で把握する
         let playerX;
         let playerY;
 
         this.map.forEach((row, y) => {
-            const x = row.indexOf("@");
-            if (x !== -1) { //indexOfは見つからない場合-1を返す
-                playerX = x; // プレイヤーのX座標
-                playerY = y; // プレイヤーのY座標
-            }
+            row.forEach((char, x) => {
+                if (char === MAP_SYMBOLS.PLAYER) {
+                    playerX = x;
+                    playerY = y;
+                }
+            });
         });
-
         // 見つけた座標でPlayerのインスタンスの生成
         this.player = new Player(playerX, playerY);
-
         // プレイヤーの位置から"@"を削除"
-        this.map[playerY][playerX] = " ";
+        this.map[playerY][playerX] = MAP_SYMBOLS.FLOOR;
 
+        // 荷物の場所を(X, Y)座標で把握する
+        this.boxes = [];
+        this.map.forEach((row, y) => {
+            row.forEach((char, x) => {
+                if (char === MAP_SYMBOLS.BOX) {
+                    this.boxes.push(new Box(x, y));
+                    this.map[y][x] = MAP_SYMBOLS.FLOOR;
+
+                };
+            });
+        });
     }
     // Playerを移動させるメソッド
     movePlayer(dx, dy) {
-        // 移動先の座標を計算
+        // プレイヤーの移動先の座標を計算
         const nextX = this.player.x + dx;
         const nextY = this.player.y + dy;
         // 移動先が壁なら何もしない
-        if (this.map[nextY][nextX] === "#") {
+        if (this.map[nextY][nextX] === MAP_SYMBOLS.WALL) {
             return;
         }
-        // 移動先が荷物なら、荷物の一個先をチェック
-        if (this.map[nextY][nextX] === "o") {
-            const boxNextX = nextX + dx;
-            const boxNextY = nextY + dy;
-            //荷物の一個先が壁か荷物なら何もしない
-            //早期リターンってやつ
-            if (this.map[boxNextY][boxNextX] === "#" || this.map[boxNextY][boxNextX] === "o") {
+        // 移動先に荷物があるか、this.boxes 配列から検索する
+        const targetBox = this.boxes.find(box => box.x === nextX && box.y === nextY);
+        // 荷物があった場合
+        // 荷物の一個先が壁か他の荷物だった場合、何もしない
+        if(targetBox) {
+            const boxNextX = targetBox.x + dx;
+            const boxNextY = targetBox.y + dy;
+            const isBlocked = this.map[boxNextY][boxNextX] === MAP_SYMBOLS.WALL ||
+                            this.boxes.some(box => box.x === boxNextX && box.y === boxNextY);
+            
+            if(isBlocked){
                 return;
-            } 
-            // returnしなかったら荷物を移動する
-            this.map[nextY][nextX] = " "; // 荷物を移動した場所を空白にする
+            }
 
-            // 荷物の移動先の行を文字列から配列に変換し、荷物の移動先を荷物にしてからもう一度文字列に変換する
-            this.map[boxNextY][boxNextX] = "o";
-                    
-        }
+            targetBox.x += dx;
+            targetBox.y += dy;
 
-        this.player.x = nextX;
-        this.player.y = nextY;
+            this.player.move(dx, dy);
+            // 荷物がない場合
+        } else {
+            this.player.move(dx, dy);
+        }         
     }
-
     // 盤面全体を表示するメソッド
     display () {
         console.clear();
@@ -86,12 +111,17 @@ class Stage {
         const viewMap = JSON.parse(JSON.stringify(this.map));
         // ゴール位置を表示する（荷物がない場合）
         this.goalPositions.forEach(goal => {
-            if (this.map[goal.y][goal.x] === " ") {
-                viewMap[goal.y][goal.x] = ".";
+            if (this.map[goal.y][goal.x] === MAP_SYMBOLS.FLOOR) {
+                viewMap[goal.y][goal.x] = MAP_SYMBOLS.GOAL;
             }
         });
+        // boxes配列の情報を元に、荷物をviewMapに描画する
+        this.boxes.forEach(box => {
+        viewMap[box.y][box.x] = box.symbol;
+        });
+
         // プレイヤーがいる行を文字列から配列に変換
-        viewMap[this.player.y][this.player.x] = "@";      // プレイヤーの位置に"@"を置く
+        viewMap[this.player.y][this.player.x] = this.player.symbol;      // プレイヤーの位置に"@"を置く
         // 文字列に戻してマップに反映
         viewMap.forEach(rowArray => {
             console.log(rowArray.join(""));
@@ -101,21 +131,38 @@ class Stage {
     // 盤面上のゴールの座標を把握しておき、すべての座標に荷物が置かれているかチェックする
     // GameクラスのisClearメソッドから呼び出される
     isClear() {
-        for (let i = 0; i < this.goalPositions.length; i++) {
-            if (this.map[this.goalPositions[i].y][this.goalPositions[i].x] !== "o") {
-                return false;
-            }
-        }
-        return true;
+        return this.goalPositions.every(goal => {
+            return this.boxes.some(box => box.x === goal.x && box.y === goal.y)
+        })
+    }
+}
+
+class MovableObject {
+    constructor(x, y, symbol) {
+        this.x = x;
+        this.y = y;
+        this.symbol = symbol; // 表示用の記号
     }
 }
 
 //プレイヤークラスを定義（プレイヤーの座標のみを管理する駒）
 // 役割：
-class Player {
+class Player extends MovableObject {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
+        // super()で親のconstructorを呼び出す
+        super(x, y, "@");
+    }
+
+    // プレイヤー専用のメソッドはここに追加できる
+    move(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+    }
+}
+
+class Box extends MovableObject {
+    constructor(x, y) {
+        super(x, y, "o");
     }
 }
 
@@ -123,8 +170,6 @@ class Player {
 // 役割：ユーザーからのキー入力を受付、それをStageクラスへの命令に変換する司令塔
 class Game {
     constructor() {
-        this.stage = new Stage();
-        this.setupInput();
     }
     // ユーザーからの入力を受け付けるメソッド
     setupInput() {
@@ -132,38 +177,55 @@ class Game {
         process.stdin.setRawMode(true);
 
         process.stdin.on('keypress', (str, key) => {
-        // Qが押されたらプログラムを終了する
-        if (key.name === "q") {
-            process.exit();
-        }
+            // Qが押されたらプログラムを終了する
+            if (key.name === "q") {
+                process.exit();
+            }
 
-        if (key.name === "r") {
-            this.reset();
-            return;
-        }
+            if (key.name === "r") {
+                this.reset();
+                return;
+            }
 
-        //入力の分岐によって座標を変更
-        if (key.name === "w") {
-            this.stage.movePlayer(0, -1);
-        } else if (key.name === "a") {
-            this.stage.movePlayer(-1, 0);
-        } else if (key.name === "s") {
-            this.stage.movePlayer(0, 1);
-        } else if (key.name === "d") {
-            this.stage.movePlayer(1, 0);
-        }
-        // 毎回の入力後に、必ず盤面を再描画する
-        this.stage.display();
+            //入力の分岐によって座標を変更
+            if (key.name === "w") {
+                this.stage.movePlayer(0, -1);
+            } else if (key.name === "a") {
+                this.stage.movePlayer(-1, 0);
+            } else if (key.name === "s") {
+                this.stage.movePlayer(0, 1);
+            } else if (key.name === "d") {
+                this.stage.movePlayer(1, 0);
+            }
+            // swtich文バージョン
+            // switch (key.name) {
+            //     case "w":
+            //         this.stage.movePlayer(0, -1);
+            //         break;
+            //     case "a":
+            //         this.stage.movePlayer(-1, 0);
+            //         break;
+            //     case "s":
+            //         this.stage.movePlayer(0, 1);
+            //         break;
+            //     case "d":
+            //         this.stage.movePlayer(1, 0);
+            //         break;
+            // }
+            // 毎回の入力後に、必ず盤面を再描画する
+            this.stage.display();
 
-        if (this.stage.isClear()) {
-        console.log('クリアおめでとう！');
-        process.exit(); // ゲームを終了する
-        }
+            if (this.stage.isClear()) {
+                console.log('クリアおめでとう！');
+                process.exit(); // ゲームを終了する
+            }
         });
     }
     // ゲームを開始するメソッド
     start() {
-        this.stage.display(); // Stageクラスのdisplayメソッドを呼び出して盤面を表示        
+        this.stage = new Stage();
+        this.setupInput();   
+        this.stage.display(); // Stageクラスのdisplayメソッドを呼び出して盤面を表示
     }
     // ゲームをリセットするメソッド
     reset() {
