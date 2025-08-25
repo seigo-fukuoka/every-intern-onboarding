@@ -237,22 +237,14 @@ class Game {
         process.stdin.setRawMode(true);
 
         process.stdin.on('keypress', (str, key) => {
-        // Qが押されたらプログラムを終了する
-        if (key.name === CONTROL_KEYS.QUIT) {
-            process.exit();
-        }
-
-        if (key.name === CONTROL_KEYS.RESET) {
-            this.reset();
-            return;
-        }
-        if (key.name === CONTROL_KEYS.UNDO) {
-            this.stage.undo();
-            return;
-        }
-        
-        //入力の分岐によって座標を変更
             switch (key.name) {
+                case CONTROL_KEYS.QUIT:
+                    process.exit();
+                case CONTROL_KEYS.RESET:
+                    this.reset();
+                    return;
+                case CONTROL_KEYS.UNDO:
+                    this.stage.undo();
                 case CONTROL_KEYS.UP:
                     this.stage.movePlayer(0, -1);
                     break;
