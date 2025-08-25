@@ -9,48 +9,52 @@
 // txtファイルからステージデータを読み込む
     // むずそう
 
-    const MAP_SYMBOLS = {
-    PLAYER: '@',
-    BOX: 'o',
-    GOAL: '.',
-    WALL: '#',
-    FLOOR: " ",
-    BOXONGOAL: "*"
+const fs = require('fs');
+
+function loadLevelsFromFile(filePath) {
+    try {
+        // ファイルを巨大な1つの文字列として同期的に読み込む
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+
+        // 文字列を処理して allMapData の形に変換する
+        return fileContent
+            .trim() // 文字列の最初と最後の余白や改行を削除
+            .split(';') // ステージ区切り(;)で分割し、ステージごとの文字列の配列にする
+            .map(levelString => levelString.trim()) // 各ステージの余白を削除
+            .filter(levelString => levelString.length > 0) // 空のステージを削除
+            .map(levelString => levelString.split('\n')); // 各ステージを改行(\n)で分割し、行の配列にする
+
+    } catch (error) {
+        // ファイルが読めなかった場合にエラーメッセージを表示して終了する
+        console.error(`エラー: レベルファイルが読み込めませんでした。パス: ${filePath}`);
+        process.exit(1); // プログラムを強制終了
+    }
+}
+
+// 作成した関数を呼び出して、ファイルから allMapData を生成する
+const allMapData = loadLevelsFromFile('levels.txt');
+
+const MAP_SYMBOLS = {
+PLAYER: '@',
+BOX: 'o',
+GOAL: '.',
+WALL: '#',
+FLOOR: " ",
+BOX_ON_GOAL: "*"
 };
+
+const CONTROL_KEYS = {
+    UP: "w",
+    LEFT: "a",
+    DOWN: "s",
+    RIGHT: "d",
+    RESET: "r",
+    QUIT: "q",
+    UNDO: "u"
+};
+
 //readlineモジュールをインポート
 const readline = require("readline");
-
-const allMapData = [
-    [ // ステージ1
-        "######",
-        "#.   #",
-        "#   @#",
-        "# o  #",
-        "#    #",
-        "#    #",
-        "######", 
-
-    ],
-    [ // ステージ2
-        "#########",
-        "#.   o  #",
-        "#   @   #",
-        "# o   . #",
-        "#       #",
-        "#       #",
-        "#########", 
-
-    ],
-    [ // ステージ3
-        
-        "#######",
-        "#@   ##",
-        "# oo  #",
-        "# #. .#",
-        "#     #",
-        "#######", 
-    ]
-];
 
 // Stageクラスを定義（盤面全体の管理者）
 // 役割：盤面の状態（壁、荷物、プレイヤーの位置）をすべて把握し、ゲームのルールを実行する責任者
@@ -70,7 +74,7 @@ class Stage {
 
         this.map.forEach((row, y) => {
             row.forEach((char, x) => {
-                if(char === MAP_SYMBOLS.GOAL){
+                if(char === MAP_SYMBOLS.GOAL) {
                     this.goalPositions.push({x: x, y: y})
                 } else if (char === MAP_SYMBOLS.PLAYER) {
                     playerX = x;
@@ -89,7 +93,8 @@ class Stage {
 
         this.historyStack = []; // アンドゥ機能のための履歴スタック
         this.moveCount = 0; // 移動回数をカウントする変数
-    }
+    } // ここまでコンストラクタ
+
     // Playerを移動させるメソッド
     movePlayer(dx, dy) {
         // 移動を行う前の盤面（床、壁、プレイヤー、荷物）の状態を保存
@@ -114,7 +119,7 @@ class Stage {
             const isBlocked = this.map[boxNextY][boxNextX] === MAP_SYMBOLS.WALL ||
                             this.boxes.some(box => box.x === boxNextX && box.y === boxNextY);
             
-            if(isBlocked){
+            if(isBlocked) {
                 return;
             }
 
@@ -125,7 +130,9 @@ class Stage {
         } else { // 荷物がない場合
             this.player.move(dx, dy);
         } 
-        this.moveCount ++;
+        if (this.moveCount > 0) {
+            this.moveCount ++;    
+        }
     }
 
     // 盤面全体を表示するメソッド
@@ -151,7 +158,7 @@ class Stage {
         this.boxes.forEach(box => {
             const isOnGoal = this.goalPositions.some(goal => goal.x === box.x && goal.y === box.y);
             if (isOnGoal){
-                viewMap[box.y][box.x] = MAP_SYMBOLS.BOXONGOAL;
+                viewMap[box.y][box.x] = MAP_SYMBOLS.BOX_ON_GOAL;
             } else {
                 viewMap[box.y][box.x] = box.symbol;
             }     
@@ -163,10 +170,10 @@ class Stage {
             console.log(rowArray.join(""));
         })
     }
+
     // クリア判定を行うメソッド
     // 盤面上のゴールの座標を把握しておき、すべての座標に荷物が置かれているかチェックする
     // GameクラスのisClearメソッドから呼び出される
-
     isClear() {
         return this.goalPositions.every(goal => {
             return this.boxes.some(box => box.x === goal.x && box.y === goal.y)
@@ -180,7 +187,7 @@ class Stage {
         const lastState = this.historyStack.pop();
         this.player = new Player(lastState.player.x, lastState.player.y);
         this.boxes = lastState.boxes.map(undoData => new Box(undoData.x, undoData.y));
-        this.moveCount ++;  q
+        this.moveCount --;  
         this.display(); // 盤面を際表示
     }
 }
@@ -198,7 +205,7 @@ class MovableObject {
 class Player extends MovableObject {
     constructor(x, y) {
         // super()で親のconstructorを呼び出す
-        super(x, y, "@");
+        super(x, y, MAP_SYMBOLS.PLAYER);
     }
 
     // プレイヤー専用のメソッドはここに追加できる
@@ -210,7 +217,7 @@ class Player extends MovableObject {
 
 class Box extends MovableObject {
     constructor(x, y) {
-        super(x, y, "o");
+        super(x, y, MAP_SYMBOLS.BOX);
     }
 }
 
@@ -231,31 +238,31 @@ class Game {
 
         process.stdin.on('keypress', (str, key) => {
         // Qが押されたらプログラムを終了する
-        if (key.name === "q") {
+        if (key.name === CONTROL_KEYS.QUIT) {
             process.exit();
         }
 
-        if (key.name === "r") {
+        if (key.name === CONTROL_KEYS.RESET) {
             this.reset();
             return;
         }
-        if (key.name === "u") {
+        if (key.name === CONTROL_KEYS.UNDO) {
             this.stage.undo();
             return;
         }
         
         //入力の分岐によって座標を変更
             switch (key.name) {
-                case "w":
+                case CONTROL_KEYS.UP:
                     this.stage.movePlayer(0, -1);
                     break;
-                case "a":
+                case CONTROL_KEYS.LEFT:
                     this.stage.movePlayer(-1, 0);
                     break;
-                case "s":
+                case CONTROL_KEYS.DOWN:
                     this.stage.movePlayer(0, 1);
                     break;
-                case "d":
+                case CONTROL_KEYS.RIGHT:
                     this.stage.movePlayer(1, 0);
                     break;
             }
@@ -268,15 +275,7 @@ class Game {
         }
         });
     }
-    // selectStage() {
-    //     console.log("ステージを選択してください: 「1」, 「2」, 「3」のどれかを入力してください");
-    //     this.rl.question
-    //         (`ステージを${allMapData.length}つの中から選択してください: 「1」, 「2」, 「3」のどれかを入力してください`, (input) => {
-    //         const selectedStage = parseInt(input) - 1;  
-    //         this.stage = new Stage(allMapData[selectedStage]); 
-    //         this.stage.display();
-    //     })
-    // }
+
     selectStage() {
         console.log("ステージを選択してください: 「1」, 「2」, 「3」のどれかを入力してください");
         this.rl.question(
@@ -295,7 +294,8 @@ class Game {
                 }
             }
         );
-    }    // ゲームを開始するメソッド
+    }    
+    // ゲームを開始するメソッド
     start() {
         this.selectStage();    
     }
