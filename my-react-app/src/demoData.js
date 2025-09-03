@@ -1,7 +1,7 @@
 export const eventsData = [
 {
   id: 1,
-  date: "2025-08-30",
+  date: "2025-08-31",
   category: "live",
   title: "@JAM EXPO 2025 supported by UP-T",
   isAttending: false
@@ -29,7 +29,7 @@ export const eventsData = [
 },
 {
   id: 5,
-  date:"2015-10-09",
+  date:"2025-10-09",
   category:"live",
   title:"DEARSTAGE SHOWCASE 2025 AUTUMN",
   isAttending: false
