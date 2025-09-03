@@ -29,6 +29,7 @@ export default function App() {
       if (event.id !== idToToggle) {
         return event;
       }
+      // 
       return {...event, isAttending: !event.isAttending };
     });
     setEvents(newEvents);
@@ -79,9 +80,11 @@ export default function App() {
 function ScheduleItem({ event, onToggleAttend }) {
   return (
     <li className="schedule-item">
-      <div className="date">{event.date}</div>
-      <div className="title">{event.title}</div>
-      <div className="category">カテゴリ：{CATEGORY_MAP[event.category]}</div>
+      <div className="event-detail">
+        <div className="date">{event.date}</div>
+        <div className="title">{event.title}</div>
+        <div className="category">カテゴリ：{CATEGORY_MAP[event.category]}</div>
+      </div>
       <button className="attend-button" onClick={() => onToggleAttend(event.id)}>
         {event.isAttending ? "❤️" : "♡"}
       </button>

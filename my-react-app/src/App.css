@@ -1,15 +1,17 @@
 #root {
+
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  font-family: 'LINE Seed JP', sans-serif;
 }
 
 /* src/index.css の末尾に追記 */
 .filter-buttons {
   text-align: center;
   margin-bottom: 20px;
-  margin: auto 0;
+  margin: 10px 0;
 }
 
 .filter-buttons button {
@@ -38,8 +40,7 @@
 
 /* src/index.css の末尾に追記 */
 .dashboard {
-  background-color: #fffde7;
-  border: 1px solid #fff59d;
+  background-color: #ffefff;
   border-radius: 8px;
   padding: 10px 20px;
   margin: 0 auto 20px; 
@@ -50,15 +51,38 @@
 .dashboard h2 {
   margin: 0;
   font-size: 1.2em;
-  color: #f57f17;
+  color: #ffc1ff;
 }
 
 .schedule-list {
     list-style-type: none;
     max-width: 700px;
     margin: 0 auto; 
+    
 }
 
 .schedule-item {
   text-align: left;
+}
+
+.schedule-item {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px; /* 角を丸くする */
+  padding: 16px; /* 内側の余白 */
+  margin-bottom: 12px; /* 各カード下の余白 */
+  display: flex; /* 要素を横並びにする */
+  align-items: center; /* 要素を中央揃え（垂直方向）にする */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 薄い影をつける */
+  text-align: left;
+}
+
+.event-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 120%;
+  font-weight: bold;
 }
