@@ -1,16 +1,3 @@
-<<<<<<< HEAD
-//readlineモジュールをインポート
-const readline = require("readline");
-
-// HitAndBlowクラスを定義、クラスはこれだけ
-class HitAndBlow {
-    constructor() {
-        // 4桁の数値を生成
-        randdomNumber
-    }
-}
-
-=======
 //hit and blow game
 
 //readlineモジュールをインポート
@@ -169,4 +156,3 @@ class HitAndBlow {
 // ゲーム開始
 const hitAndBlow = new HitAndBlow();
 hitAndBlow.start();
->>>>>>> main
