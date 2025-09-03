@@ -25,6 +25,7 @@ export default function App() {
   // ♡ボタンが押されたときの処理
   const handleToggleAttend = (idToToggle) => {
     // 元のevents配列を直接変更せず、新しい配列 newEvents を作成する
+    
     const newEvents = events.map(event => {
       // idが合致するものがあるか照らし合わせて、なかったらそのまま返す、あればtrue or falseのisAttendingを反転させる（デフォルトはfalse）
       if (event.id !== idToToggle) {
@@ -35,8 +36,8 @@ export default function App() {
     });
     setEvents(newEvents);
   }
-
-  const availableMonths = [...new Set(eventsData.map(event => event.date.substring(0, 7)))].sort();
+  // eventsDataの「年・月」のみを取り出し、古い順にソート
+  const availableMonths = [...new Set(eventsData.map(event => event.date.substring(0, 7)))].sort();  
 
   // 選択されたカテゴリに基づいて、表示するイベントをフィルタリングする
   const filteredEvents = events.filter(event => {
@@ -45,6 +46,8 @@ export default function App() {
     const monthMatch = selectedMonth === "all" || event.date.startsWith(selectedMonth);
     return categoryMatch && monthMatch;
     });
+
+  const likedEvents = events.filter(event => event.isAttending);
 
   return (
     <div>
@@ -75,6 +78,7 @@ export default function App() {
         events={filteredEvents} 
         onToggleAttend={handleToggleAttend}
       />
+      <LikedEventsList events={likedEvents} />
     </div>
   )
 }
@@ -129,10 +133,33 @@ function NextEventDashboard({ events }) {
 
     message = `次の予定「${nextEvent.title}」まであと${diffDays}日！`;
   }
+  return (
+  <div className="dashboard">
+    <h2>{message}</h2>
+  </div>  
+  );
+}
+
+// App.jsxの末尾などに追加
+
+function LikedEventsList({ events }) {
+  // いいね済みのイベントが1つもなければ、何も表示しない
+  if (events.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="dashboard">
-      <h2>{message}</h2>
-    </div>  
+    <div className="liked-events-section">
+      <h3>❤️ いいね済みイベント</h3>
+      <ul className="liked-list">
+        {events.map(event => (
+          <li key={event.id} className="liked-item">
+            {/* ↓ 日付とタイトルをspanで囲む */}
+            <span className="liked-date">{event.date}</span>
+            <span className="liked-title">{event.title}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
