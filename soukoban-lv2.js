@@ -35,12 +35,12 @@ function loadLevelsFromFile(filePath) {
 const allMapData = loadLevelsFromFile('levels.txt');
 
 const MAP_SYMBOLS = {
-PLAYER: '@',
-BOX: 'o',
-GOAL: '.',
-WALL: '#',
-FLOOR: " ",
-BOX_ON_GOAL: "*"
+    PLAYER: '@',
+    BOX: 'o',
+    GOAL: '.',
+    WALL: '#',
+    FLOOR: " ",
+    BOX_ON_GOAL: "*"
 };
 
 const CONTROL_KEYS = {
