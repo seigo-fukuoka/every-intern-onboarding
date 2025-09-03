@@ -6,7 +6,8 @@ const CATEGORY_MAP = {
   live: "ライブ",
   "fan-meeting": "ファンミーティング",
   media: "メディア",
-  all: "すべて"
+  all: "すべて",
+  others: "その他"
 }
 
 export default function App() {
@@ -66,6 +67,8 @@ export default function App() {
           <button onClick={() => setSelectedCategory("live")}>ライブ</button>
           <button onClick={() => setSelectedCategory("media")}>メディア</button>
           <button onClick={() => setSelectedCategory("fan-meeting")}>ファンミーティング</button>
+          <button onClick={() => setSelectedCategory("others")}>その他</button>
+
         </div>
       </div>
       <ScheduleList 

@@ -40,5 +40,26 @@ export const eventsData = [
   category:"live",
   title:"Unlock Secret Heart♡",
   isAttending: false
+},
+{
+  id: 7,
+  date:"2025-10-20",
+  category:"live",
+  title:"あむはアイドル5ねんせい！〜みんなまとめてあむ心中〜",
+  isAttending: false
+},
+{
+  id: 8,
+  date:"2025-11-08",
+  category:"live",
+  title:"Unlock Secret Heart♡",
+  isAttending: false
+},
+{
+  id: 9,
+  date:"2026-01-17",
+  category:"others",
+  title:"GAKUSEI RUNWAY 2025 WINTER",
+  isAttending: false
 }
 ]
