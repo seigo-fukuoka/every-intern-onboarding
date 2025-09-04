@@ -9,7 +9,7 @@ export const eventsData = [
 {
   id: 2,
   date: "2025-09-15",
-  category:"fan-meeting",
+  category:"fanMeeting",
   title:"環やねpresents ＢＳ日テレぽっかる「ジャムムをきゅるして♡」ﾔﾈﾁｮｷお披露目会",
   isAttending: false
 },

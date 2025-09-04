@@ -4,7 +4,7 @@ import './App.css';
 
 const CATEGORY_MAP = {
   live: "ライブ",
-  "fan-meeting": "ファンミーティング",
+  fanMeeting: "ファンミーティング",
   media: "メディア",
   all: "すべて",
   others: "その他"
@@ -69,7 +69,7 @@ export default function App() {
           <button onClick={() => setSelectedCategory("all")}>すべて</button>
           <button onClick={() => setSelectedCategory("live")}>ライブ</button>
           <button onClick={() => setSelectedCategory("media")}>メディア</button>
-          <button onClick={() => setSelectedCategory("fan-meeting")}>ファンミーティング</button>
+          <button onClick={() => setSelectedCategory("fanMeeting")}>ファンミーティング</button>
           <button onClick={() => setSelectedCategory("others")}>その他</button>
         </div>
       </div>
