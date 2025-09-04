@@ -26,8 +26,9 @@ export default function App() {
       if (event.id !== idToToggle) {
         return event;
       }
-      //
-      return { ...event, isAttending: !event.isAttending };
+      const newEvent = JSON.parse(JSON.stringify(event));
+      newEvent.isAttending = !newEvent.isAttending;
+      return newEvent;
     });
     setEvents(newEvents);
   };
