@@ -71,14 +71,13 @@ export default function App() {
           <button onClick={() => setSelectedCategory("media")}>メディア</button>
           <button onClick={() => setSelectedCategory("fan-meeting")}>ファンミーティング</button>
           <button onClick={() => setSelectedCategory("others")}>その他</button>
-
         </div>
       </div>
+      <LikedEventsList events={likedEvents} />
       <ScheduleList 
         events={filteredEvents} 
         onToggleAttend={handleToggleAttend}
       />
-      <LikedEventsList events={likedEvents} />
     </div>
   )
 }
@@ -140,14 +139,11 @@ function NextEventDashboard({ events }) {
   );
 }
 
-// App.jsxの末尾などに追加
-
 function LikedEventsList({ events }) {
   // いいね済みのイベントが1つもなければ、何も表示しない
   if (events.length === 0) {
     return null;
   }
-
   return (
     <div className="liked-events-section">
       <h3>❤️ いいね済みイベント</h3>

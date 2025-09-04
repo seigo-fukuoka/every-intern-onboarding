@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 #root {
 
   max-width: 1280px;
@@ -62,27 +66,20 @@
 }
 
 .schedule-item {
-  text-align: left;
-}
-
-.schedule-item {
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px; /* 角を丸くする */
   padding: 16px; /* 内側の余白 */
   margin-bottom: 12px; /* 各カード下の余白 */
-  display: flex; /* 要素を横並びにする */
+  display: flex;  /* 要素を横並びにする */
   align-items: center; /* 要素を中央揃え（垂直方向）にする */
   box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 薄い影をつける */
   text-align: left;
 }
 
 .event-detail {
-  display: flex;
   flex-direction: column;
 }
-
-
 
 .title {
   font-size: 120%;
@@ -93,22 +90,23 @@
 
 /* セクション全体のスタイル */
 .liked-events-section {
-  max-width: 700px;
+  max-width: 600px;
   margin: 40px auto 0; /* 上のリストとの間に余白を設ける */
-  padding: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
   background-color: #fce4ec; /* 薄いピンク */
   border: 1px solid #f8bbd0;
   border-radius: 8px;
   text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .liked-events-section h3 {
   margin-top: 0;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  padding-bottom: 5px;
   color: #c2185b; /* 濃いピンク */
-  border-bottom: 2px solid #f8bbd0;
-  font-size: 1.2em;
+  border-bottom: 3px solid #f8bbd0;
+  font-size: 1.1em;
 }
 
 /* リストのスタイル */
@@ -121,8 +119,8 @@
 /* リストアイテムのスタイル */
 .liked-item {
   display: flex;
-  padding: 10px 5px;
-  border-bottom: 1px solid #fbe9e7; /* 薄い区切り線 */
+  padding: 2px 2px;
+  border-bottom: 1px solid #ffadad; /* 薄い区切り線 */
 }
 
 /* 最後のアイテムの区切り線は消す */
