@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { eventsData } from "./demoData";
+import { LikedEventsList } from "./components/LikedEventsList";
+import { NextEventDashboard } from "./components/NextEventDashboard";
+import { ScheduleList } from "./components/ScheduleList";
 import "./App.css";
 
 export default function App() {
@@ -76,88 +79,6 @@ export default function App() {
         events={filteredEvents}
         onToggleAttend={handleToggleAttend}
       />
-    </div>
-  );
-}
-
-{
-  /* 最も小さい部品、一個一個のイベントデータを格納するコンポーネント */
-}
-function ScheduleItem({ event, onToggleAttend }) {
-  return (
-    <li className="schedule-item">
-      <div className="event-detail">
-        <div className="date">{event.date}</div>
-        <div className="title">{event.title}</div>
-        <div className="category">カテゴリ：{CATEGORY_MAP[event.category]}</div>
-      </div>
-      <button
-        className="attend-button"
-        onClick={() => onToggleAttend(event.id)}
-      >
-        {event.isAttending ? "❤️" : "♡"}
-      </button>
-    </li>
-  );
-}
-
-function ScheduleList({ events, onToggleAttend }) {
-  return (
-    <ul className="schedule-list">
-      {events.map((event) => (
-        <ScheduleItem
-          key={event.id}
-          event={event}
-          onToggleAttend={onToggleAttend}
-        />
-      ))}
-    </ul>
-  );
-}
-
-function NextEventDashboard({ events }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const upcomingAttendingEvents = events
-    .filter((event) => event.isAttending && new Date(event.date) >= today)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const nextEvent = upcomingAttendingEvents[0];
-
-  let message = "参加予定のイベントはありません";
-
-  if (nextEvent) {
-    const nextEventDate = new Date(nextEvent.date);
-    const diffTime = nextEventDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24) - 1);
-
-    message = `次の予定「${nextEvent.title}」まであと${diffDays}日！`;
-  }
-  return (
-    <div className="dashboard">
-      <h2>{message}</h2>
-    </div>
-  );
-}
-
-function LikedEventsList({ events }) {
-  // いいね済みのイベントが1つもなければ、何も表示しない
-  if (events.length === 0) {
-    return null;
-  }
-  return (
-    <div className="liked-events-section">
-      <h3>❤️ いいね済みイベント</h3>
-      <ul className="liked-list">
-        {events.map((event) => (
-          <li key={event.id} className="liked-item">
-            {/* ↓ 日付とタイトルをspanで囲む */}
-            <span className="liked-date">{event.date}</span>
-            <span className="liked-title">{event.title}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
