@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { eventsData } from "./demoData";
-import './App.css'; 
+import "./App.css";
 
-const CATEGORY_MAP = {
+export const CATEGORY_MAP = {
   live: "ライブ",
   fanMeeting: "ファンミーティング",
   media: "メディア",
   all: "すべて",
-  others: "その他"
-}
+  others: "その他",
+};
+export const FILTER_TYPE_ALL = "all";
 
 export default function App() {
   // useStateを使って、イベント一覧のデータを「状態」として管理する
@@ -18,48 +19,52 @@ export default function App() {
   // 絞り込みカテゴリを「状態」として管理する
   // selectedCategory: 現在選択されているカテゴリ名 ("all", "live" など)
   // setSelectedCategory: selectedCategoryを更新するための専用関数
-  const [selectedCategory, setSelectedCategory]  = useState("all"); // useStateは第一引数（変数）と第二引数（変数を更新する関数）を返す
+  const [selectedCategory, setSelectedCategory] = useState("all"); // useStateは第一引数（変数）と第二引数（変数を更新する関数）を返す
   const [selectedMonth, setSelectedMonth] = useState("all");
 
   // --- イベントハンドラ ---
   // ♡ボタンが押されたときの処理
   const handleToggleAttend = (idToToggle) => {
     // 元のevents配列を直接変更せず、新しい配列 newEvents を作成する
-    
-    const newEvents = events.map(event => {
+
+    const newEvents = events.map((event) => {
       // idが合致するものがあるか照らし合わせて、なかったらそのまま返す、あればtrue or falseのisAttendingを反転させる（デフォルトはfalse）
       if (event.id !== idToToggle) {
         return event;
       }
-      // 
-      return {...event, isAttending: !event.isAttending };
+      //
+      return { ...event, isAttending: !event.isAttending };
     });
     setEvents(newEvents);
-  }
+  };
   // eventsDataの「年・月」のみを取り出し、古い順にソート
-  const availableMonths = [...new Set(eventsData.map(event => event.date.substring(0, 7)))].sort();  
+  const availableMonths = [
+    ...new Set(eventsData.map((event) => event.date.substring(0, 7))),
+  ].sort();
 
   // 選択されたカテゴリに基づいて、表示するイベントをフィルタリングする
-  const filteredEvents = events.filter(event => {
-    // "すべて"が選択されている場合は、全てのイベントを対象とする
-    const categoryMatch = selectedCategory ===  "all" || event.category === selectedCategory; 
-    const monthMatch = selectedMonth === "all" || event.date.startsWith(selectedMonth);
+  const filteredEvents = events.filter((event) => {
+    const categoryMatch =
+      selectedCategory === "all" || event.category === selectedCategory;
+    const monthMatch =
+      selectedMonth === "all" || event.date.startsWith(selectedMonth);
     return categoryMatch && monthMatch;
-    });
+  });
 
-  const likedEvents = events.filter(event => event.isAttending);
+  const likedEvents = events.filter((event) => event.isAttending);
 
   return (
     <div>
       <h1>きゅるりんってしてみて スケジュール</h1>
       <NextEventDashboard events={events} />
       <div className="filters">
-        <select className="month-filter"
-          value = {selectedMonth}
+        <select
+          className="month-filter"
+          value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
         >
           <option value="all">すべての月</option>
-          {availableMonths.map(month => (
+          {availableMonths.map((month) => (
             <option key={month} value={month}>
               {month}
             </option>
@@ -69,20 +74,24 @@ export default function App() {
           <button onClick={() => setSelectedCategory("all")}>すべて</button>
           <button onClick={() => setSelectedCategory("live")}>ライブ</button>
           <button onClick={() => setSelectedCategory("media")}>メディア</button>
-          <button onClick={() => setSelectedCategory("fanMeeting")}>ファンミーティング</button>
+          <button onClick={() => setSelectedCategory("fanMeeting")}>
+            ファンミーティング
+          </button>
           <button onClick={() => setSelectedCategory("others")}>その他</button>
         </div>
       </div>
       <LikedEventsList events={likedEvents} />
-      <ScheduleList 
-        events={filteredEvents} 
+      <ScheduleList
+        events={filteredEvents}
         onToggleAttend={handleToggleAttend}
       />
     </div>
-  )
+  );
 }
 
-{/* 最も小さい部品、一個一個のイベントデータを格納するコンポーネント */}
+{
+  /* 最も小さい部品、一個一個のイベントデータを格納するコンポーネント */
+}
 function ScheduleItem({ event, onToggleAttend }) {
   return (
     <li className="schedule-item">
@@ -91,7 +100,10 @@ function ScheduleItem({ event, onToggleAttend }) {
         <div className="title">{event.title}</div>
         <div className="category">カテゴリ：{CATEGORY_MAP[event.category]}</div>
       </div>
-      <button className="attend-button" onClick={() => onToggleAttend(event.id)}>
+      <button
+        className="attend-button"
+        onClick={() => onToggleAttend(event.id)}
+      >
         {event.isAttending ? "❤️" : "♡"}
       </button>
     </li>
@@ -101,7 +113,7 @@ function ScheduleItem({ event, onToggleAttend }) {
 function ScheduleList({ events, onToggleAttend }) {
   return (
     <ul className="schedule-list">
-      {events.map( event => (
+      {events.map((event) => (
         <ScheduleItem
           key={event.id}
           event={event}
@@ -113,13 +125,12 @@ function ScheduleList({ events, onToggleAttend }) {
 }
 
 function NextEventDashboard({ events }) {
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const upcomingAttendingEvents = events
-  .filter(event => event.isAttending && new Date(event.date) >= today)
-  .sort((a, b) => new Date(a.date) - new Date(b.date));
+    .filter((event) => event.isAttending && new Date(event.date) >= today)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const nextEvent = upcomingAttendingEvents[0];
 
@@ -133,9 +144,9 @@ function NextEventDashboard({ events }) {
     message = `次の予定「${nextEvent.title}」まであと${diffDays}日！`;
   }
   return (
-  <div className="dashboard">
-    <h2>{message}</h2>
-  </div>  
+    <div className="dashboard">
+      <h2>{message}</h2>
+    </div>
   );
 }
 
@@ -148,7 +159,7 @@ function LikedEventsList({ events }) {
     <div className="liked-events-section">
       <h3>❤️ いいね済みイベント</h3>
       <ul className="liked-list">
-        {events.map(event => (
+        {events.map((event) => (
           <li key={event.id} className="liked-item">
             {/* ↓ 日付とタイトルをspanで囲む */}
             <span className="liked-date">{event.date}</span>
