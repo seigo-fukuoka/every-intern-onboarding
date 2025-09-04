@@ -2,15 +2,6 @@ import { useState } from "react";
 import { eventsData } from "./demoData";
 import "./App.css";
 
-export const CATEGORY_MAP = {
-  live: "ライブ",
-  fanMeeting: "ファンミーティング",
-  media: "メディア",
-  all: "すべて",
-  others: "その他",
-};
-export const FILTER_TYPE_ALL = "all";
-
 export default function App() {
   // useStateを使って、イベント一覧のデータを「状態」として管理する
   // events: 現在のイベント一覧データ
