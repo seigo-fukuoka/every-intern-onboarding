@@ -13,8 +13,8 @@ export default function App() {
   // 絞り込みカテゴリを「状態」として管理する
   // selectedCategory: 現在選択されているカテゴリ名 ("all", "live" など)
   // setSelectedCategory: selectedCategoryを更新するための専用関数
-  const [selectedCategory, setSelectedCategory] = useState("all"); // useStateは第一引数（変数）と第二引数（変数を更新する関数）を返す
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(FILTER_TYPE_ALL); // useStateは第一引数（変数）と第二引数（変数を更新する関数）を返す
+  const [selectedMonth, setSelectedMonth] = useState(FILTER_TYPE_ALL);
 
   // --- イベントハンドラ ---
   // ♡ボタンが押されたときの処理
@@ -38,11 +38,19 @@ export default function App() {
 
   // 選択されたカテゴリに基づいて、表示するイベントをフィルタリングする
   const filteredEvents = events.filter((event) => {
-    const categoryMatch =
-      selectedCategory === "all" || event.category === selectedCategory;
-    const monthMatch =
-      selectedMonth === "all" || event.date.startsWith(selectedMonth);
-    return categoryMatch && monthMatch;
+    if (
+      selectedCategory !== FILTER_TYPE_ALL &&
+      event.category !== selectedCategory
+    ) {
+      return false;
+    }
+    if (
+      selectedMonth !== FILTER_TYPE_ALL &&
+      !event.date.startsWith(selectedMonth)
+    ) {
+      return false;
+    }
+    return true;
   });
 
   const likedEvents = events.filter((event) => event.isAttending);
