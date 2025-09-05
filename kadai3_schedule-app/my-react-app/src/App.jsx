@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { eventsData } from "./demoData";
-import { LikedEventsList } from "./components/LikedEventsList";
-import { NextEventDashboard } from "./components/NextEventDashboard";
-import { ScheduleList } from "./components/ScheduleList";
+import { eventsData } from "./demoData.js";
+import { LikedEventsList } from "./components/LikedEventsList.jsx";
+import { NextEventDashboard } from "./components/NextEventDashboard.jsx";
+import { ScheduleList } from "./components/ScheduleList.jsx";
 import { CATEGORIES, CATEGORY_MAP, FILTER_TYPE_ALL } from "./constants.js";
 import "./App.css";
 
