@@ -3,7 +3,7 @@ import { eventsData } from "./demoData";
 import { LikedEventsList } from "./components/LikedEventsList";
 import { NextEventDashboard } from "./components/NextEventDashboard";
 import { ScheduleList } from "./components/ScheduleList";
-import { CATEGORY_MAP, FILTER_TYPE_ALL } from "./constants.js";
+import { CATEGORIES, CATEGORY_MAP, FILTER_TYPE_ALL } from "./constants.js";
 import "./App.css";
 
 export default function App() {
@@ -12,7 +12,7 @@ export default function App() {
   // setEvents: eventsを更新するための専用関数
   const [events, setEvents] = useState(eventsData);
   // 絞り込みカテゴリを「状態」として管理する
-  // selectedCategory: 現在選択されているカテゴリ名 ("all", "live" など)
+  // selectedCategory: 現在選択されているカテゴリ
   // setSelectedCategory: selectedCategoryを更新するための専用関数
   const [selectedCategory, setSelectedCategory] = useState(FILTER_TYPE_ALL); // useStateは第一引数（変数）と第二引数（変数を更新する関数）を返す
   const [selectedMonth, setSelectedMonth] = useState(FILTER_TYPE_ALL);
@@ -67,7 +67,7 @@ export default function App() {
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
         >
-          <option value="all">すべての月</option>
+          <option value={FILTER_TYPE_ALL}>すべての月</option>
           {availableMonths.map((month) => (
             <option key={month} value={month}>
               {month}
@@ -75,13 +75,21 @@ export default function App() {
           ))}
         </select>
         <div className="filter-buttons">
-          <button onClick={() => setSelectedCategory("all")}>すべて</button>
-          <button onClick={() => setSelectedCategory("live")}>ライブ</button>
-          <button onClick={() => setSelectedCategory("media")}>メディア</button>
-          <button onClick={() => setSelectedCategory("fanMeeting")}>
+          <button onClick={() => setSelectedCategory(FILTER_TYPE_ALL)}>
+            すべて
+          </button>
+          <button onClick={() => setSelectedCategory(CATEGORIES.LIVE)}>
+            ライブ
+          </button>
+          <button onClick={() => setSelectedCategory(CATEGORIES.MEDIA)}>
+            メディア
+          </button>
+          <button onClick={() => setSelectedCategory(CATEGORIES.FAN_MEETING)}>
             ファンミーティング
           </button>
-          <button onClick={() => setSelectedCategory("others")}>その他</button>
+          <button onClick={() => setSelectedCategory(CATEGORIES.OTHERS)}>
+            その他
+          </button>
         </div>
       </div>
       <LikedEventsList events={likedEvents} />
