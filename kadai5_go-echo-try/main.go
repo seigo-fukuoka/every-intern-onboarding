@@ -3,11 +3,13 @@ package main
 import (
 	"net/http"
 
+	"strings"
+
 	"github.com/labstack/echo/v4"
 )
 
 type Task struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
 	Status string `json:"status"`
 }
 
@@ -25,7 +27,21 @@ func main() {
 	})
 
 	e.GET("/tasks", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, tasks)
+		searchQuery := c.QueryParam("q")
+
+		if searchQuery == "" {
+			return c.JSON(http.StatusOK, tasks)
+		}
+
+		filteredTasks := []Task{}
+		for _, task := range tasks {
+			if strings.Contains(strings.ToLower(task.Name), strings.ToLower(searchQuery)) ||
+				strings.Contains(strings.ToLower(task.Status), strings.ToLower(searchQuery)) {
+				filteredTasks = append(filteredTasks, task)
+			}
+		}
+
+		return c.JSON(http.StatusOK, filteredTasks)
 	})
 
 	e.Logger.Fatal(e.Start(":1323"))
