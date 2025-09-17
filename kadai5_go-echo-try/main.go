@@ -96,5 +96,75 @@ func main() {
 		})
 	})
 
+	e.PUT("/tasks/:id", func(c echo.Context) error {
+		idParam := c.Param("id")
+		id, err := strconv.Atoi(idParam)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "Invalid task ID",
+				"error":   err.Error(),
+			})
+		}
+
+		updateTask := new(Task)
+		if err := c.Bind(updateTask); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "Invalid request body",
+				"error":   err.Error(),
+			})
+		}
+		if updateTask.Name == "" {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "Task name cannot be empty",
+			})
+		}
+
+		taskIndex := -1
+		for i, task := range tasks {
+			if task.ID == id {
+				taskIndex = i
+				break
+			}
+		}
+
+		if taskIndex == -1 {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"message": "Task not found",
+			})
+		}
+
+		tasks[taskIndex].Name = updateTask.Name
+		tasks[taskIndex].Status = updateTask.Status
+
+		return c.JSON(http.StatusOK, tasks[taskIndex])
+	})
+
+	e.DELETE("/tasks/:id", func(c echo.Context) error {
+		idParam := c.Param("id")
+		id, err := strconv.Atoi(idParam)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "Invalid task ID",
+				"error":   err.Error(),
+			})
+		}
+
+		taskIndex := -1
+		for i, task := range tasks {
+			if task.ID == id {
+				taskIndex = i
+				break
+			}
+		}
+		if taskIndex == -1 {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"message": "Task not found",
+			})
+		}
+
+		tasks = append(tasks[:taskIndex], tasks[taskIndex+1:]...)
+		return c.NoContent(http.StatusNoContent)
+	})
+
 	e.Logger.Fatal(e.Start(":1323"))
 }
