@@ -89,6 +89,7 @@ export default function App() {
       <button 
         onClick={handleScrapeLatest}
         disabled={loading}
+        style={{ marginBottom: '20px' }}
       >
         {loading ? '取得中...' : '最新スケジュール取得'}
       </button>

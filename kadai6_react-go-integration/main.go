@@ -123,7 +123,7 @@ func main() {
 		return c.JSON(http.StatusOK, events) // 検索ロジックを削除し、すべてのイベントを返す
 	})
 
-	// 新しいスクレイピングエンドポイント
+	// 単一日付スクレイピングエンドポイント
 	e.GET("/scrape/events", func(c echo.Context) error {
 		dateParam := c.QueryParam("date")
 		if dateParam == "" {
@@ -141,7 +141,7 @@ func main() {
 			})
 		}
 
-		scrapedEvent, err := scrapeEvent(parsedDate.Format("2006.01.02")) // スラッシュ区切りからドット区切りに変換して渡す
+		scrapedEvent, err := scrapeEvent(parsedDate.Format("2006.01.02"))
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"message": "Failed to scrape event",
