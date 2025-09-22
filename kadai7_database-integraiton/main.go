@@ -1,3 +1,5 @@
+// きゅるりんってしてみてスケジュールアプリ - データベース統合版
+// 機能: Webページから情報取得 + データベース保存 + API提供 + ブラウザ画面表示
 package main
 
 import (
@@ -7,43 +9,53 @@ import (
 	"net/http"
 	"strings"
 
+	migrate "github.com/rubenv/sql-migrate"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocolly/colly/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
+// Event - イベント情報を格納する構造体
 type Event struct {
-	ID          int               `json:"id"`
-	Date        string            `json:"date"`
-	Title       string            `json:"title"`
-	IsAttending bool              `json:"isAttending"`
-	Details     map[string]string `json:"details"` // 柔軟な追加情報（全て文字列）
+	ID          int               `json:"id"`          // 自動生成ID
+	Date        string            `json:"date"`        // 日付 (YYYY-MM-DD)
+	Title       string            `json:"title"`       // イベント名
+	IsAttending bool              `json:"isAttending"` // 参加予定フラグ
+	Details     map[string]string `json:"details"`     // 追加情報（JSON形式）
 }
 
+// main - アプリケーションのエントリーポイント
 func main() {
+	// Webサーバー初期化（Echo = Go用のWebフレームワーク）
 	e := echo.New()
 
+	// データベース接続
 	db, err := connectDB()
 	if err != nil {
 		panic(err)
 	}
+	// マイグレーション実行（テーブル作成・更新）
 	err = initDB(db)
 	if err != nil {
 		panic(err)
 	}
 
+	// CORS設定（ブラウザからのアクセス許可設定）
+	// React（ポート5174）からGo（ポート1323）へのアクセスを許可
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173", "http://localhost:5174", "http://localhost:5175"}, // React開発サーバーのURL
+		AllowOrigins: []string{"http://localhost:5173"}, // React開発サーバーのURL
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// ヘルスチェック用エンドポイント
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, Echo!")
 	})
 
-	// GET /events エンドポイント: すべてのイベントを取得
+	// GET /events - 全イベント取得API（ブラウザ画面用）
 	e.GET("/events", func(c echo.Context) error {
 		rows, err := db.Query("SELECT id, date, title, is_attending, details FROM events ORDER BY date ASC")
 		if err != nil {
@@ -81,7 +93,7 @@ func main() {
 		return c.JSON(http.StatusOK, events)
 	})
 
-	// GET /scrape/all-events エンドポイント: すべてのイベントをスクレイピングして追加
+	// GET /scrape/all-events - Webページ情報取得実行API
 	e.GET("/scrape/all-events", func(c echo.Context) error {
 		newEvents, err := scrapeAllEvent(db)
 		if err != nil {
@@ -99,51 +111,59 @@ func main() {
 
 	})
 
+	// Webサーバー起動（ポート1323）
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
-// scrapeAllEvent は指定された日付のイベントをスクレイピングして返します
+// scrapeAllEvent - きゅるりんってしてみてWebサイトからイベント情報をスクレイピング
+// 重複チェックを行い、新しいイベントのみDBに保存
 func scrapeAllEvent(db *sql.DB) ([]Event, error) {
+	// Webページ読み取りツール初期化（iPhoneのフリをして情報取得）
 	c := colly.NewCollector(
 		colly.UserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"),
 	)
 
 	var newEvents []Event
-	// currentID := eventIDCounter + 1 // デバッグ中は一旦コメントアウト
 
-	// 正しいセレクタでイベント要素を検索
-	fmt.Printf("Setting up OnHTML handler for article selector\n")
+	// Webページ解析: HTML文書からイベント情報を探し出す
+	// 「article.tribe-events-calendar-month-mobile-events__mobile-event」というタグを見つけたら以下を実行
+	// → きゅるりんサイトで1つのイベント情報が入っているHTMLの箱
 	c.OnHTML("article.tribe-events-calendar-month-mobile-events__mobile-event", func(e *colly.HTMLElement) {
-		fmt.Printf("OnHTML handler triggered for article element\n")
 
-		// 日付情報を取得（例: "2025.09.18 / 6:45 PM - 9:00 PM"）
+		// イベントの日時を取得（例: "2025.09.18 / 6:45 PM - 9:00 PM"）
+		// HTMLの中から日時が書いてある部分を探して文字として取得
 		dateTimeText := e.ChildText(".tribe-events-calendar-month-mobile-events__mobile-event-datetime")
 
-		// タイトル情報を取得
+		// イベントのタイトルを取得
+		// HTMLの中からタイトルが書いてある部分を探して文字として取得
 		titleText := e.ChildText(".tribe-events-calendar-month-mobile-events__mobile-event-title")
 
+		// 見つけたイベント情報をコンソールに表示
 		fmt.Printf("Found event: DateTime=%s, Title=%s\n", dateTimeText, titleText)
 
-		// 日付部分だけを抽出（"2025.09.18"）
+		// 日付部分だけを切り出し（"2025.09.18 / 6:45 PM" → "2025.09.18"）
 		datePart := strings.Split(dateTimeText, " /")[0]
-		datePart = strings.TrimSpace(datePart)
+		datePart = strings.TrimSpace(datePart) // 前後の空白を削除
 
-		// 日付フォーマットを変換（"2025.09.18" → "2025-09-18"）
+		// 日付の区切り文字を統一（"2025.09.18" → "2025-09-18"）
 		formattedDate := strings.ReplaceAll(datePart, ".", "-")
 
+		// 重複チェック: 同じ日付・同じタイトルのイベントが既にデータベースにあるか確認
 		var count int
 		err := db.QueryRow("SELECT COUNT(*) FROM events WHERE date = ? AND title = ?",
 			formattedDate, titleText).Scan(&count)
 		if err != nil {
-			fmt.Println("Error checking duplicate: %v\n", err)
+			fmt.Printf("Error checking duplicate: %v\n", err)
 			return
 		}
 
 		if count > 0 {
+			// 既に同じイベントがあるので、このイベントは保存しない
 			fmt.Printf("スキップ: %s (%s) - すでに存在\n", titleText, formattedDate)
 			return
 		}
 
+		// イベントの詳細説明を取得
 		fullDescription := e.ChildText("div.tribe-events-single-event-description")
 
 		newEvent := Event{
@@ -159,7 +179,7 @@ func scrapeAllEvent(db *sql.DB) ([]Event, error) {
 			return
 		}
 
-		// DBにINSERT（IDはAUTO_INCREMENTで自動生成）
+		// 新しいイベント情報をデータベースのeventsテーブルに1行追加
 		result, err := db.Exec("INSERT INTO events (date, title, is_attending, details) VALUES (?, ?, ?, ?)",
 			newEvent.Date, newEvent.Title, newEvent.IsAttending, string(detailsJSON))
 		if err != nil {
@@ -167,7 +187,7 @@ func scrapeAllEvent(db *sql.DB) ([]Event, error) {
 			return
 		}
 
-		// 生成されたIDを取得してnewEventに設定
+		// データベースが自動で作ったIDを取得
 		lastInsertID, err := result.LastInsertId()
 		if err != nil {
 			fmt.Printf("Error getting last insert ID: %v\n", err)
@@ -180,11 +200,12 @@ func scrapeAllEvent(db *sql.DB) ([]Event, error) {
 
 	})
 
-	// エラーハンドリング
+	// スクレイピングエラーハンドリング
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
+	// 実際にWebページにアクセスして情報を取得開始
 	err := c.Visit("https://www.kyurushite.com/schedule/")
 	if err != nil {
 		return nil, fmt.Errorf("failed to visit URL: %v", err)
@@ -193,8 +214,9 @@ func scrapeAllEvent(db *sql.DB) ([]Event, error) {
 	return newEvents, nil
 }
 
+// connectDB - MySQLデータベースへの接続
 func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("mysql", "root:password@tcp(localhost:3306)/events_db")
+	db, err := sql.Open("mysql", "root:password@tcp(localhost:3306)/events_db?parseTime=true")
 	if err != nil {
 		return nil, err
 	}
@@ -205,46 +227,21 @@ func connectDB() (*sql.DB, error) {
 	return db, nil
 }
 
+// initDB - データベース初期化（マイグレーション実行）
 func initDB(db *sql.DB) error {
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS events (
-		id INT AUTO_INCREMENT PRIMARY KEY,
-		date VARCHAR(10) NOT NULL,
-		title VARCHAR(255) NOT NULL,
-		is_attending BOOLEAN DEFAULT FALSE,
-		details JSON,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		KEY idx_date (date)
-	);`
+	return runMigrations(db)
+}
 
-	_, err := db.Exec(createTableSQL)
+// runMigrations - データベースの構造変更を実行
+// migrations/フォルダ内の.sqlファイル（テーブル作成命令書）を順番に適用
+func runMigrations(db *sql.DB) error {
+	migrations := &migrate.FileMigrationSource{
+		Dir: "migrations/",
+	}
+	n, err := migrate.Exec(db, "mysql", migrations, migrate.Up)
 	if err != nil {
 		return err
 	}
-	fmt.Println("eventsテーブル作成完了！")
-	return nil
-}
-
-func migrateMemoryToDB(db *sql.DB, events []Event) error {
-	for _, event := range events {
-		var count int
-		err := db.QueryRow("SELECT COUNT(*) FROM events WHERE date = ? AND title = ?", event.Date, event.Title).Scan(&count)
-		if err != nil {
-			return err
-		}
-		if count > 0 {
-			continue
-		}
-		detailsJSON, err := json.Marshal(event.Details)
-		if err != nil {
-			return err
-		}
-		_, err = db.Exec("INSERT INTO events (date, title, is_attending, details) VALUES (?, ?, ?, ?)", event.Date, event.Title, event.IsAttending, string(detailsJSON))
-		if err != nil {
-			return err
-		}
-	}
-
+	fmt.Printf("Applied %d migrations!\n", n)
 	return nil
 }
