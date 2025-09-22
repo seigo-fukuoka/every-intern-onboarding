@@ -10,6 +10,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState(FILTER_TYPE_ALL);
   const [selectedMonth, setSelectedMonth] = useState(FILTER_TYPE_ALL);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -23,7 +24,7 @@ export default function App() {
       } catch (error) {
         setError(error.message); // エラーメッセージをセット
         console.error("Failed to fetch events:", error);
-      }
+      } 
     };
 
     fetchEvents();
@@ -40,6 +41,22 @@ export default function App() {
       return newEvent;
     });
     setEvents(newEvents);
+  };
+
+  const handleScrapeLatest = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:1323/scrape/events?date=2025-09-18');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const newEvent = await response.json();
+      setEvents([...events, newEvent].sort((a, b) => new Date(a.date) - new Date(b.date)));
+    } catch (error) {
+      setError(error.message);
+      console.error("Failed to scrape event:", error);
+    }
+    setLoading(false);
   };
 
   const availableMonths = [
@@ -69,6 +86,13 @@ export default function App() {
       <h1>きゅるりんってしてみて スケジュール</h1>
       {error && <p style={{ color: "red" }}>Error: {error}</p>} {/* エラーメッセージを表示 */}
       <NextEventDashboard events={events} />
+      <button 
+        onClick={handleScrapeLatest}
+        disabled={loading}
+        style={{ marginBottom: '20px' }}
+      >
+        {loading ? '取得中...' : '最新スケジュール取得'}
+      </button>
       <div className="filters">
         <select
           className="month-filter"
