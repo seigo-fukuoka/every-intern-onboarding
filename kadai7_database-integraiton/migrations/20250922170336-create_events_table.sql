@@ -1,0 +1,15 @@
+
+-- +migrate Up
+CREATE TABLE IF NOT EXISTS events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date VARCHAR(10) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    is_attending BOOLEAN DEFAULT FALSE,
+    details JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_date (date)
+);
+
+-- +migrate Down
+DROP TABLE IF EXISTS events;

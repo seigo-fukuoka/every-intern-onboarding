@@ -1,0 +1,9 @@
+development:
+  dialect: mysql
+  datasource: root:password@tcp(localhost:3306)/events_db?parseTime=true
+  dir: ./migrations/
+
+production:
+  dialect: mysql
+  datasource: root:password@tcp(localhost:3306)/events_db?parseTime=true
+  dir: ./migrations/
