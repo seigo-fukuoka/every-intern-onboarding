@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	migrate "github.com/rubenv/sql-migrate"
+	"github.com/urfave/cli/v2"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocolly/colly/v2"
@@ -28,40 +30,67 @@ type Event struct {
 
 // main - アプリケーションのエントリーポイント
 func main() {
+	// CLI アプリケーション設定
+	app := &cli.App{
+		Name:  "schedule-scraper",
+		Usage: "スケジュールスクレイピング & API サーバー",
+		Commands: []*cli.Command{
+			{
+				Name:  "server",
+				Usage: "APIサーバー起動",
+				Action: func(c *cli.Context) error {
+					return startServer()
+				},
+			},
+			{
+				Name:  "scrape",
+				Usage: "イベントをスクレイピング",
+				Action: func(c *cli.Context) error {
+					return runScraping()
+				},
+			},
+		},
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Printf("エラー: %v\n", err)
+	}
+}
+
+func startServer() error {
+
 	// Webサーバー初期化（Echo = Go用のWebフレームワーク）
 	e := echo.New()
 
 	// データベース接続
 	db, err := connectDB()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	// マイグレーション実行（テーブル作成・更新）
 	err = initDB(db)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// CORS設定（ブラウザからのアクセス許可設定）
-	// React（ポート5174）からGo（ポート1323）へのアクセスを許可
+	// React（ポート5173-5175）からGo（ポート1323）へのアクセスを許可
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:5173"}, // React開発サーバーのURL
+		AllowOrigins: []string{"http://localhost:5173", "http://localhost:5174", "http://localhost:5175"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
-	// ヘルスチェック用エンドポイント
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Echo!")
-	})
+	// API エンドポイント設定
 
-	// GET /events - 全イベント取得API（ブラウザ画面用）
+	// GET /events - 全イベント取得
 	e.GET("/events", func(c echo.Context) error {
-		rows, err := db.Query("SELECT id, date, title, is_attending, details FROM events ORDER BY date ASC")
+		query := `SELECT id, date, title, is_attending, details FROM events ORDER BY date ASC`
+		rows, err := db.Query(query)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"message": "Failed to fetch events",
-				"error":   err.Error(),
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Database query failed",
 			})
 		}
 		defer rows.Close()
@@ -70,21 +99,16 @@ func main() {
 		for rows.Next() {
 			var event Event
 			var detailsJSON string
+
 			err := rows.Scan(&event.ID, &event.Date, &event.Title, &event.IsAttending, &detailsJSON)
 			if err != nil {
-				return c.JSON(http.StatusInternalServerError, map[string]string{
-					"message": "Failed to scan event",
-					"error":   err.Error(),
+				return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+					"error": "Failed to scan event data",
 				})
 			}
 
-			// JSON文字列をmap[string]stringに変換
-			err = json.Unmarshal([]byte(detailsJSON), &event.Details)
-			if err != nil {
-				return c.JSON(http.StatusInternalServerError, map[string]string{
-					"message": "Failed to parse event details",
-					"error":   err.Error(),
-				})
+			if err := json.Unmarshal([]byte(detailsJSON), &event.Details); err != nil {
+				event.Details = make(map[string]string)
 			}
 
 			events = append(events, event)
@@ -93,26 +117,58 @@ func main() {
 		return c.JSON(http.StatusOK, events)
 	})
 
-	// GET /scrape/all-events - Webページ情報取得実行API
+	// GET /scrape/all-events - 全イベントスクレイピング実行
 	e.GET("/scrape/all-events", func(c echo.Context) error {
-		newEvents, err := scrapeAllEvent(db)
+		events, err := scrapeAllEvent(db)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"message": "Failed to scrape all events",
-				"error":   err.Error(),
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": err.Error(),
 			})
 		}
 
 		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message": fmt.Sprintf("%d件の新しいイベントを追加しました", len(newEvents)),
-			"count":   len(newEvents),
-			"events":  newEvents,
+			"message": "スクレイピング完了！",
+			"count":   len(events),
+			"events":  events,
 		})
-
 	})
 
-	// Webサーバー起動（ポート1323）
-	e.Logger.Fatal(e.Start(":1323"))
+	// サーバー起動（ポート1323で待機）
+	fmt.Println("サーバーを起動中... http://localhost:1323")
+	return e.Start(":1323")
+}
+
+// runScraping - スクレイピング実行（CLI用）
+func runScraping() error {
+	fmt.Println("🚀 イベントスクレイピングを開始...")
+
+	// データベース接続
+	db, err := connectDB()
+	if err != nil {
+		return fmt.Errorf("データベース接続エラー: %v", err)
+	}
+	defer db.Close()
+
+	// マイグレーション実行
+	err = initDB(db)
+	if err != nil {
+		return fmt.Errorf("マイグレーションエラー: %v", err)
+	}
+
+	// スクレイピング実行
+	events, err := scrapeAllEvent(db)
+	if err != nil {
+		return fmt.Errorf("スクレイピングエラー: %v", err)
+	}
+
+	fmt.Printf("✅ スクレイピング完了！ %d件のイベントを取得しました\n", len(events))
+
+	// 取得したイベントを表示
+	for i, event := range events {
+		fmt.Printf("%d. %s - %s\n", i+1, event.Date, event.Title)
+	}
+
+	return nil
 }
 
 // scrapeAllEvent - きゅるりんってしてみてWebサイトからイベント情報をスクレイピング
