@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info:
+  title: Schedule Scraper API
+  version: 1.0.0
+  description: |
+    きゅるりんってしてみてイベント管理API
+
+    このAPIは以下の機能を提供します：
+    - イベント一覧の取得
+    - Webスクレイピングによる最新イベント情報の収集・保存
+
+    対象サイト：https://www.kyurushite.com/schedule/
+
+servers:
+  - url: http://localhost:1323
+    description: 開発環境
+
+paths:
+  /events:
+    $ref: 'paths/events.yaml'
+  
+  /scrape/all-events:
+    $ref: 'paths/scrape.yaml'
+
+components:
+  schemas:
+    Event:
+      $ref: 'schemas/event.yaml#/Event'
+    
+    ScrapeResponse:
+      $ref: 'schemas/scrape-response.yaml#/ScrapeResponse'
+
