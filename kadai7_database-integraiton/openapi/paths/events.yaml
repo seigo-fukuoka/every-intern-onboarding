@@ -1,0 +1,29 @@
+# GET /events エンドポイントの詳細定義
+# 用途: データベースからイベント一覧を取得するAPI
+
+get:
+  summary: "全イベント取得"
+  description: |
+    データベースに保存されている全てのイベントを日付順で取得します。
+    スクレイピングで収集したイベント情報が返却されます。
+  
+  responses:
+    "200":
+      description: "イベント一覧の取得成功"
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '../schemas/event.yaml#/Event'
+    
+    "500":
+      description: "データベースエラー"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: "データベースエラーの詳細メッセージ"
