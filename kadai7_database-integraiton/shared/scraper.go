@@ -9,18 +9,23 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-func ScrapeAllEvent(db *sql.DB) ([]Event, error) {
+func ScrapeAllEvent(db *sql.DB, limit int) ([]Event, error) {
 	// Webページ読み取りツール初期化（iPhoneのフリをして情報取得）
 	c := colly.NewCollector(
 		colly.UserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1"),
 	)
 
 	var newEvents []Event
+	var stopped bool // limit到達フラグ
 
 	// Webページ解析: HTML文書からイベント情報を探し出す
 	// 「article.tribe-events-calendar-month-mobile-events__mobile-event」というタグを見つけたら以下を実行
 	// → きゅるりんサイトで1つのイベント情報が入っているHTMLの箱
 	c.OnHTML("article.tribe-events-calendar-month-mobile-events__mobile-event", func(e *colly.HTMLElement) {
+		// limit到達チェック
+		if stopped {
+			return // 早期リターン
+		}
 
 		// イベントの日時を取得（例: "2025.09.18 / 6:45 PM - 9:00 PM"）
 		// HTMLの中から日時が書いてある部分を探して文字として取得
@@ -89,6 +94,12 @@ func ScrapeAllEvent(db *sql.DB) ([]Event, error) {
 
 		newEvents = append(newEvents, newEvent)
 		fmt.Printf("追加: %s (%s) - ID: %d\n", newEvent.Title, newEvent.Date, newEvent.ID)
+
+		// limit到達チェック
+		if limit > 0 && len(newEvents) >= limit {
+			stopped = true
+			fmt.Printf("🛑 limit到達: %d件取得完了\n", limit)
+		}
 
 	})
 

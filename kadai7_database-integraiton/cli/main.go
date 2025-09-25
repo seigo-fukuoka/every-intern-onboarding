@@ -19,8 +19,16 @@ func main() {
 			{
 				Name:  "scrape",
 				Usage: "イベントをスクレイピング",
+				Flags: []cli.Flag{
+					&cli.IntFlag{
+						Name:  "limit",
+						Value: 0,
+						Usage: "取得する件数の上限(0は無制限)",
+					},
+				},
 				Action: func(c *cli.Context) error {
-					return runScraping()
+					limit := c.Int("limit")
+					return runScrapingWithLimit(limit)
 				},
 			},
 		},
@@ -33,7 +41,7 @@ func main() {
 	}
 }
 
-func runScraping() error {
+func runScrapingWithLimit(limit int) error {
 	fmt.Println("🚀 イベントスクレイピングを開始...")
 
 	// データベース接続
@@ -50,7 +58,7 @@ func runScraping() error {
 	}
 
 	// スクレイピング実行
-	events, err := shared.ScrapeAllEvent(db)
+	events, err := shared.ScrapeAllEvent(db, limit)
 	if err != nil {
 		return fmt.Errorf("スクレイピングエラー: %v", err)
 	}

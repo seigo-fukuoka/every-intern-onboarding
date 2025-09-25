@@ -82,7 +82,7 @@ func startServer() error {
 
 	// GET /scrape/all-events - 全イベントスクレイピング実行
 	e.GET("/scrape/all-events", func(c echo.Context) error {
-		events, err := shared.ScrapeAllEvent(db)
+		events, err := shared.ScrapeAllEvent(db, 0) // API側はlimit無制限
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 				"error": err.Error(),
