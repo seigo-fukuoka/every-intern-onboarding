@@ -1,17 +1,17 @@
-// きゅるりんってしてみてスケジュールアプリ - データベース統合版
-// 機能: Webページから情報取得 + データベース保存 + API提供 + ブラウザ画面表示
+// きゅるりんってしてみてスケジュールアプリ - レイヤードアーキテクチャ版
+// 機能: ルーター専用（依存性注入 + ルーティング設定）
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"kadai7_database-integraiton/shared"
+	"kadai7_database-integraiton/handler"
+	"kadai7_database-integraiton/repository"
+	"kadai7_database-integraiton/service"
 )
 
 // main - アプリケーションのエントリーポイント
@@ -22,20 +22,24 @@ func main() {
 }
 
 func startServer() error {
+	// 依存性注入（Dependency Injection）
+	// Repository層 → Service層 → Handler層の順序で初期化
+
+	// 1. Repository層の初期化（DB接続 + マイグレーション）
+	eventRepo, err := repository.NewEventRepository()
+	if err != nil {
+		return fmt.Errorf("Repository初期化エラー: %v", err)
+	}
+	defer eventRepo.Close() // サーバー終了時にDB接続を閉じる
+
+	// 2. Service層の初期化（Repository層を注入）
+	eventService := service.NewEventService(eventRepo)
+
+	// 3. Handler層の初期化（Service層を注入）
+	eventHandler := handler.NewEventHandler(eventService)
 
 	// Webサーバー初期化（Echo = Go用のWebフレームワーク）
 	e := echo.New()
-
-	// データベース接続
-	db, err := shared.ConnectDB()
-	if err != nil {
-		return err
-	}
-	// マイグレーション実行（テーブル作成・更新）
-	err = shared.InitDB(db)
-	if err != nil {
-		return err
-	}
 
 	// CORS設定（ブラウザからのアクセス許可設定）
 	// React（ポート5173-5175）からGo（ポート1323）へのアクセスを許可
@@ -45,56 +49,9 @@ func startServer() error {
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
-	// API エンドポイント設定
-
-	// GET /events - 全イベント取得
-	e.GET("/events", func(c echo.Context) error {
-		query := `SELECT id, date, title, is_attending, details FROM events ORDER BY date ASC`
-		rows, err := db.Query(query)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": err.Error(),
-			})
-		}
-		defer rows.Close()
-
-		events := make([]shared.Event, 0) // 空スライスを明示的に初期化
-		for rows.Next() {
-			var event shared.Event
-			var detailsJSON string
-
-			err := rows.Scan(&event.ID, &event.Date, &event.Title, &event.IsAttending, &detailsJSON)
-			if err != nil {
-				return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-					"error": err.Error(),
-				})
-			}
-
-			if err := json.Unmarshal([]byte(detailsJSON), &event.Details); err != nil {
-				event.Details = make(map[string]string)
-			}
-
-			events = append(events, event)
-		}
-
-		return c.JSON(http.StatusOK, events)
-	})
-
-	// GET /scrape/all-events - 全イベントスクレイピング実行
-	e.GET("/scrape/all-events", func(c echo.Context) error {
-		events, err := shared.ScrapeAllEvent(db, 0) // API側はlimit無制限
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-				"error": err.Error(),
-			})
-		}
-
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"message": "スクレイピング完了！",
-			"count":   len(events),
-			"events":  events,
-		})
-	})
+	// ルーティング設定（Handler層のメソッドを指定）
+	e.GET("/events", eventHandler.GetEvents)               // 全イベント取得
+	e.GET("/scrape/all-events", eventHandler.ScrapeEvents) // スクレイピング実行
 
 	// サーバー起動（ポート1323で待機）
 	fmt.Println("サーバーを起動中... http://localhost:1323")
