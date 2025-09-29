@@ -6,16 +6,16 @@ import (
 
 	"github.com/gocolly/colly/v2"
 
-	"kadai7_database-integraiton/repository"
+	"kadai7_database-integration/repository"
 )
 
 // EventService - イベントのドメイン層（ビジネスロジック）
 type EventService struct {
-	eventRepo *repository.EventRepository
+	eventRepo repository.EventRepositoryInterface
 }
 
 // NewEventService - EventServiceのコンストラクタ
-func NewEventService(eventRepo *repository.EventRepository) *EventService {
+func NewEventService(eventRepo repository.EventRepositoryInterface) *EventService {
 	return &EventService{
 		eventRepo: eventRepo,
 	}

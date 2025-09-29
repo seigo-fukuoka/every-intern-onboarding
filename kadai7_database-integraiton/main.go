@@ -9,9 +9,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"kadai7_database-integraiton/handler"
-	"kadai7_database-integraiton/repository"
-	"kadai7_database-integraiton/service"
+	"kadai7_database-integration/handler"
+	"kadai7_database-integration/repository"
+	"kadai7_database-integration/service"
 )
 
 // main - アプリケーションのエントリーポイント

@@ -6,7 +6,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"kadai7_database-integraiton/shared"
+	"kadai7_database-integration/repository"
+	"kadai7_database-integration/service"
 )
 
 func main() {
@@ -44,21 +45,18 @@ func main() {
 func runScrapingWithLimit(limit int) error {
 	fmt.Println("🚀 イベントスクレイピングを開始...")
 
-	// データベース接続
-	db, err := shared.ConnectDB()
+	// Repository層の初期化
+	repo, err := repository.NewEventRepository()
 	if err != nil {
-		return fmt.Errorf("データベース接続エラー: %v", err)
+		return fmt.Errorf("Repository初期化エラー: %v", err)
 	}
-	defer db.Close()
+	defer repo.Close()
 
-	// マイグレーション実行
-	err = shared.InitDB(db)
-	if err != nil {
-		return fmt.Errorf("マイグレーションエラー: %v", err)
-	}
+	// Service層の初期化
+	eventService := service.NewEventService(repo)
 
 	// スクレイピング実行
-	events, err := shared.ScrapeAllEvent(db, limit)
+	events, err := eventService.ScrapeAndSaveEvents(limit)
 	if err != nil {
 		return fmt.Errorf("スクレイピングエラー: %v", err)
 	}

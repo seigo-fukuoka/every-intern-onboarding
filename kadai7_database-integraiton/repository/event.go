@@ -48,7 +48,7 @@ func NewEventRepository() (*EventRepository, error) {
 // RunMigrations - データベースの構造変更を実行（shared/database.goから移行）
 func (r *EventRepository) RunMigrations() error {
 	migrations := &migrate.FileMigrationSource{
-		Dir: "migrations/",
+		Dir: "../migrations/",
 	}
 	n, err := migrate.Exec(r.db, "mysql", migrations, migrate.Up)
 	if err != nil {
