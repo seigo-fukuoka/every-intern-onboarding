@@ -1,0 +1,27 @@
+# GET /scrape/all-events エンドポイントの詳細定義
+# 用途: Webスクレイピングを実行してイベント情報を収集・保存するAPI
+
+get:
+  summary: "全イベントスクレイピング実行"
+  description: |
+    きゅるりんってしてみてのサイトから最新のイベント情報をスクレイピングし、データベースに保存します。重複チェックも自動実行されます。
+
+  responses:
+    "200":
+      description: "スクレイピング完了"
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/scrape-response.yaml#/ScrapeResponse'
+    
+    "500":
+      description: "スクレイピングエラー"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: "スクレイピングエラーの詳細メッセージ"
+

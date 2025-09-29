@@ -1,0 +1,24 @@
+# スクレイピングの戻り値の型定義
+# 用途: GET /scrape/all-events エンドポイントのレスポンス
+# 説明: スクレイピング実行結果（メッセージ + 件数 + 取得データ）
+
+ScrapeResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: "スクレイピング完了！"
+      description: スクレイピング完了メッセージ
+    count:
+      type: integer
+      example: 0
+      description: スクレイピングしたイベントの数
+    events:
+      type: array
+      items:
+        $ref: "./event.yaml#/Event"
+      description: 取得したイベント一覧
+  required:
+    - message
+    - count
+    - events

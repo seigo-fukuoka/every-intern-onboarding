@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { LikedEventsList } from "./components/LikedEventsList.jsx";
 import { NextEventDashboard } from "./components/NextEventDashboard.jsx";
 import { ScheduleList } from "./components/ScheduleList.jsx";
-import { CATEGORIES, CATEGORY_MAP, FILTER_TYPE_ALL } from "./constants.js";
+import { FILTER_TYPE_ALL } from "./constants.js";
 import "./App.css";
 
 export default function App() {
   const [events, setEvents] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(FILTER_TYPE_ALL);
   const [selectedMonth, setSelectedMonth] = useState(FILTER_TYPE_ALL);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -50,12 +49,6 @@ export default function App() {
 
   const filteredEvents = events.filter((event) => {
     if (
-      selectedCategory !== FILTER_TYPE_ALL &&
-      event.category !== selectedCategory
-    ) {
-      return false;
-    }
-    if (
       selectedMonth !== FILTER_TYPE_ALL &&
       !event.date.startsWith(selectedMonth)
     ) {
@@ -84,23 +77,6 @@ export default function App() {
             </option>
           ))}
         </select>
-        <div className="filter-buttons">
-          <button onClick={() => setSelectedCategory(FILTER_TYPE_ALL)}>
-            すべて
-          </button>
-          <button onClick={() => setSelectedCategory(CATEGORIES.LIVE)}>
-            ライブ
-          </button>
-          <button onClick={() => setSelectedCategory(CATEGORIES.MEDIA)}>
-            メディア
-          </button>
-          <button onClick={() => setSelectedCategory(CATEGORIES.FAN_MEETING)}>
-            ファンミーティング
-          </button>
-          <button onClick={() => setSelectedCategory(CATEGORIES.OTHERS)}>
-            その他
-          </button>
-        </div>
       </div>
       <LikedEventsList events={likedEvents} />
       <ScheduleList
